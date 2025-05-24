@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!78 &1
+TagManager:
+  serializedVersion: 3
+  tags:
+  - GROUND
+  - Wood
+  - Door
+  - Wall
+  - HideDesk
+  - CinemachineTarget
+  layers:
+  - Default
+  - TransparentFX
+  - Ignore Raycast
+  - Ground
+  - Water
+  - UI
+  - 
+  - Interaction
+  - Player1
+  - Player2
+  - Player3
+  - Player4
+  - Player1FPS
+  - Player2FPS
+  - Player3FPS
+  - Player4FPS
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+  m_SortingLayers:
+  - name: Default
+    uniqueID: 0
+    locked: 0
+  m_RenderingLayers:
+  - Default
