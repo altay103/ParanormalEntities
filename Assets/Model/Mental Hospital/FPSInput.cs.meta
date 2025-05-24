@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: e94977024db402a4aa10196ca7924406
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 153117
+  packageName: Mental Hospital
+  packageVersion: 1.9.2
+  assetPath: Assets/Mental Hospital/FPSInput.cs
+  uploadId: 423824
