@@ -1,14 +1,15 @@
 using UnityEngine;
 using System.Collections;
 
-public class physicWalk_MouseLook : MonoBehaviour {
-	
+public class physicWalk_MouseLook : MonoBehaviour
+{
+
 	public static physicWalk_MouseLook instance;
-	
+
 	public Transform _camPos;
 	public Vector3 camPosBasePosition;
 	public Transform alternateCamPos;
-	
+
 	public enum RotationAxes { MouseXAndY = 0, MouseX = 1, MouseY = 2 }
 	public RotationAxes axes = RotationAxes.MouseXAndY;
 	public float sensitivity = 15f;
@@ -21,117 +22,160 @@ public class physicWalk_MouseLook : MonoBehaviour {
 
 	public float rotationY = 0f;
 	public float rotationX = 0f;
-	
-	public Vector2 smoothedMouse = new Vector2( 0f, 0f );
-	
+
+	public Vector2 smoothedMouse = new Vector2(0f, 0f);
+
 	public float smoothing = 4f;
-	
+
 	public bool isCamera = false;
-	
+
 	public float wobbleX = 0f;
 	public float wobbleY = 0f;
-	
+
 	public float wobbleXtarget = 0f;
 	public float wobbleYtarget = 0f;
-	
+
 	public float wobbleXspeed = 10f;
 	public float wobbleYspeed = 10f;
-	
+
 	private float Ydirection = 1f;
 	private float inputSensitivity = 0f;
 
 	Quaternion startRotation;
-	
+
+	public AudioSource audioSource; // AudioSource referansı
+	public AudioClip walkStepLoopClip; // Yürüyüş sesi (loop)
+	public AudioClip runStepLoopClip;  // Koşu sesi (loop)
+
+	private bool isWalking = false;
+	public bool isRunning = false;
+
 	void Start()
 	{
-		if( isCamera )
+		if (isCamera)
 		{
 			instance = this;
 		}
 		startRotation = transform.localRotation;
-		if( _camPos != null ) camPosBasePosition = _camPos.transform.localPosition;
+		if (_camPos != null) camPosBasePosition = _camPos.transform.localPosition;
 
 		rotationX = transform.rotation.eulerAngles.y;
 		rotationY = transform.rotation.eulerAngles.x;
 
 		inputSensitivity += sensitivity;
 		inputSensitivity *= 100f;
-		if( inputSensitivity <= 0f ) inputSensitivity = 0.1f;
-		
+		if (inputSensitivity <= 0f) inputSensitivity = 0.1f;
+
 		Cursor.lockState = CursorLockMode.Locked;
 		Cursor.visible = false;
-	}
-	
-	void FixedUpdate ()
-	{	
-		smoothedMouse = Vector2.Lerp( smoothedMouse, new Vector2( Input.GetAxis( "Mouse X" ), Input.GetAxis( "Mouse Y" ) ), 1f/smoothing );
-		
-		if( isCamera )
-		{
-			_camPos.localPosition = Vector3.Lerp( _camPos.localPosition, camPosBasePosition, Time.fixedDeltaTime * 10f );
-			transform.position = Vector3.Lerp( transform.position, _camPos.position, Time.fixedDeltaTime * 5f );
-			
-			if( transform.localEulerAngles.y < 180f )
-			{
-				transform.localEulerAngles = Vector3.Lerp( transform.localEulerAngles, new Vector3( transform.localEulerAngles.x, 0f, transform.localEulerAngles.y ), Time.fixedDeltaTime * 5f );
-			}
-			else if( transform.localEulerAngles.y > 180f )
-			{
-				transform.localEulerAngles = Vector3.Lerp( transform.localEulerAngles, new Vector3( transform.localEulerAngles.x, 360f, transform.localEulerAngles.y ), Time.fixedDeltaTime * 5f );
-			}
-		}
-		else if( isCamera && alternateCamPos != null )
-		{
-			transform.position = Vector3.Lerp( transform.position, alternateCamPos.position, Time.fixedDeltaTime * 10f );
-			transform.rotation = Quaternion.Lerp( transform.rotation, alternateCamPos.rotation, Time.fixedDeltaTime * 10f );
-		}
-		
 
-			if (axes == RotationAxes.MouseX)
+		audioSource = GetComponent<AudioSource>();
+		if (audioSource != null)
+		{
+			audioSource.loop = true;
+			audioSource.playOnAwake = false;
+		}
+	}
+
+	void FixedUpdate()
+	{
+		smoothedMouse = Vector2.Lerp(smoothedMouse, new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y")), 1f / smoothing);
+
+		if (isCamera)
+		{
+			_camPos.localPosition = Vector3.Lerp(_camPos.localPosition, camPosBasePosition, Time.fixedDeltaTime * 10f);
+			transform.position = Vector3.Lerp(transform.position, _camPos.position, Time.fixedDeltaTime * 5f);
+
+			if (transform.localEulerAngles.y < 180f)
 			{
-				rotationX += (smoothedMouse.x * inputSensitivity)*Time.deltaTime;
-				
-				transform.localEulerAngles = new Vector3( transform.localEulerAngles.x, rotationX, 0f);
+				transform.localEulerAngles = Vector3.Lerp(transform.localEulerAngles, new Vector3(transform.localEulerAngles.x, 0f, transform.localEulerAngles.y), Time.fixedDeltaTime * 5f);
+			}
+			else if (transform.localEulerAngles.y > 180f)
+			{
+				transform.localEulerAngles = Vector3.Lerp(transform.localEulerAngles, new Vector3(transform.localEulerAngles.x, 360f, transform.localEulerAngles.y), Time.fixedDeltaTime * 5f);
+			}
+		}
+		else if (isCamera && alternateCamPos != null)
+		{
+			transform.position = Vector3.Lerp(transform.position, alternateCamPos.position, Time.fixedDeltaTime * 10f);
+			transform.rotation = Quaternion.Lerp(transform.rotation, alternateCamPos.rotation, Time.fixedDeltaTime * 10f);
+		}
+
+
+		if (axes == RotationAxes.MouseX)
+		{
+			rotationX += (smoothedMouse.x * inputSensitivity) * Time.deltaTime;
+
+			transform.localEulerAngles = new Vector3(transform.localEulerAngles.x, rotationX, 0f);
+		}
+		else
+		{
+			rotationY += (smoothedMouse.y * Ydirection * inputSensitivity) * Time.deltaTime;
+			rotationY = Mathf.Clamp(rotationY, minimumY, maximumY);
+
+			transform.localEulerAngles = new Vector3(-rotationY, transform.localEulerAngles.y, (-smoothedMouse.x * inputSensitivity) * Time.deltaTime);
+		}
+
+
+		wobbleX = Mathf.Lerp(wobbleX, wobbleXtarget, Time.fixedDeltaTime * wobbleXspeed);
+		wobbleY = Mathf.Lerp(wobbleY, wobbleYtarget, Time.fixedDeltaTime * wobbleYspeed);
+
+		if (wobbleXtarget > 0f) wobbleXtarget -= Time.fixedDeltaTime * wobbleXspeed;
+		if (wobbleXtarget < 0f) wobbleXtarget += Time.fixedDeltaTime * wobbleXspeed;
+
+		if (wobbleYtarget > 0f) wobbleYtarget -= Time.fixedDeltaTime * wobbleYspeed;
+		if (wobbleYtarget < 0f) wobbleYtarget += Time.fixedDeltaTime * wobbleYspeed;
+
+		Quaternion localrot = transform.localRotation;
+		Vector3 euler = localrot.eulerAngles;
+
+		euler.x += wobbleY;
+
+		localrot.eulerAngles = euler;
+		transform.localRotation = localrot;
+
+		// Yürüme ve koşma kontrolü (örnek: Input.GetKey ile)
+		isWalking = Input.GetKey(KeyCode.W) && !Input.GetKey(KeyCode.LeftShift);
+		isRunning = Input.GetKey(KeyCode.W) && Input.GetKey(KeyCode.LeftShift);
+
+		if (audioSource != null)
+		{
+			if (isRunning)
+			{
+				if (audioSource.clip != runStepLoopClip)
+				{
+					audioSource.clip = runStepLoopClip;
+					audioSource.Play();
+				}
+			}
+			else if (isWalking)
+			{
+				if (audioSource.clip != walkStepLoopClip)
+				{
+					audioSource.clip = walkStepLoopClip;
+					audioSource.Play();
+				}
 			}
 			else
 			{
-				rotationY += (smoothedMouse.y * Ydirection * inputSensitivity)*Time.deltaTime;
-				rotationY = Mathf.Clamp (rotationY, minimumY, maximumY);
-				
-				transform.localEulerAngles = new Vector3(-rotationY, transform.localEulerAngles.y, (-smoothedMouse.x * inputSensitivity)*Time.deltaTime );
+				if (audioSource.isPlaying)
+					audioSource.Stop();
 			}
-
-		
-		wobbleX = Mathf.Lerp( wobbleX, wobbleXtarget, Time.fixedDeltaTime * wobbleXspeed );
-		wobbleY = Mathf.Lerp( wobbleY, wobbleYtarget, Time.fixedDeltaTime * wobbleYspeed );
-		
-		if( wobbleXtarget > 0f ) wobbleXtarget -= Time.fixedDeltaTime * wobbleXspeed;
-		if( wobbleXtarget < 0f ) wobbleXtarget += Time.fixedDeltaTime * wobbleXspeed;
-		
-		if( wobbleYtarget > 0f ) wobbleYtarget -= Time.fixedDeltaTime * wobbleYspeed;
-		if( wobbleYtarget < 0f ) wobbleYtarget += Time.fixedDeltaTime * wobbleYspeed;
-		
-		Quaternion localrot = transform.localRotation;
-		Vector3 euler = localrot.eulerAngles;
-		
-		euler.x += wobbleY;
-		
-		localrot.eulerAngles = euler;
-		transform.localRotation = localrot;
+		}
 	}
-	
-	public void wobble( float _x, float _y, float _speedX, float _speedY )
+
+	public void wobble(float _x, float _y, float _speedX, float _speedY)
 	{
 		wobbleX = 0f;
 		wobbleY = 0f;
-		
+
 		wobbleXtarget = _x;
 		wobbleYtarget = _y;
-		
+
 		wobbleXspeed = _speedX;
 		wobbleYspeed = _speedY;
 	}
-	
+
 }
 
 

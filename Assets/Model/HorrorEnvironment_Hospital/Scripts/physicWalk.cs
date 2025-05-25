@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using NUnit.Framework;
 
 public class physicWalk : MonoBehaviour
 {
@@ -30,8 +31,11 @@ public class physicWalk : MonoBehaviour
 
 	private Rigidbody rb;
 
+	public bool running = false;
+
 	void Start()
 	{
+		Destroy(this.GetComponent<physicWalk>()); // Bu scriptin kendisini yok et
 		instance = this;
 		collider = gameObject.GetComponent<CapsuleCollider>();
 		rb = GetComponent<Rigidbody>();
@@ -81,6 +85,11 @@ public class physicWalk : MonoBehaviour
 			if (Input.GetButton("Sprint"))
 			{
 				fr += Time.deltaTime * 0.5f;
+				running = true;
+			}
+			else
+			{
+				running = false;
 			}
 
 			while (fr >= footsFrequency)
@@ -95,8 +104,14 @@ public class physicWalk : MonoBehaviour
 		if (Input.GetButton("Sprint"))
 		{
 			speed = maxSprintSpeed;
+			running = true;
 		}
-		else speed = maxWalkSpeed;
+		else
+		{
+			speed = maxWalkSpeed;
+			running = false;
+		}
+
 	}
 
 	public void playFootstepSound()

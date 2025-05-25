@@ -12,36 +12,60 @@ public class Door : MonoBehaviour
     public void DoorOpenClose()
     {
         if (isAnimating) return;
-        
+
         isAnimating = true;
-        
+
         if (doorAnim.GetBool("Open"))
         {
-            doorSound.PlayOneShot(doorClose);
-            doorAnim.SetBool("Close", true);
-            doorAnim.SetBool("Open", false);
-            
-            Invoke(nameof(EnableObstacle), 1.20f);
+            CloseDoor();
+
         }
         else if (doorAnim.GetBool("Close"))
         {
-            doorSound.PlayOneShot(doorOpen);
-            doorAnim.SetBool("Open", true);
-            doorAnim.SetBool("Close", false);
-            
-            navObstacle.carving = false;
+            OpenDoor();
+
+
         }
         isAnimating = true;
         Invoke(nameof(AnimasyonBitti), doorAnim.GetBool("Close") ? 1.20f : 1f);
     }
-    
-    private void EnableObstacle()
-    {
-        navObstacle.carving = true;
-    }
-    
+
+
+
     private void AnimasyonBitti()
     {
         isAnimating = false;
+    }
+    void OnTriggerEnter(Collider other)
+    {
+
+        if (other.gameObject.CompareTag("Enemy"))
+        {
+
+            OpenDoor();
+
+
+
+        }
+    }
+    void OpenDoor()
+    {
+
+        doorSound.PlayOneShot(doorOpen);
+        doorAnim.SetBool("Open", true);
+        doorAnim.SetBool("Close", false);
+        transform.GetChild(0).GetComponent<NavMeshObstacle>().carving = true;
+
+
+
+    }
+    void CloseDoor()
+    {
+
+        doorSound.PlayOneShot(doorClose);
+        doorAnim.SetBool("Close", true);
+        doorAnim.SetBool("Open", false);
+        transform.GetChild(0).GetComponent<NavMeshObstacle>().carving = false;
+
     }
 }
