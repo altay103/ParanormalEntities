@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -30,12 +31,29 @@ public class EnemyController : MonoBehaviour
         SetRandomDestination();
         speed = agent.speed;
     }
-
+    bool IsScreamHeard(float mesafe)
+    {
+        float sesSeviyesi = MicInput.MicLoudness;
+        float gerekenEsik = HesaplaEsik(mesafe);
+        if (sesSeviyesi >= gerekenEsik)
+        {
+            return true;
+        }
+        return false;
+    }
+    float HesaplaEsik(float mesafe)
+    {
+        if (mesafe <= 5f) return 0.2f;
+        if (mesafe <= 10f) return 0.4f;
+        if (mesafe <= 15f) return 0.6f;
+        return 0.8f;
+    }
     void Update()
     {
         float distanceToPlayer = Vector3.Distance(transform.position, player.position);
 
-        if (!isChasing && !isSearching && distanceToPlayer < hearingDistance && PlayerIsRunning())
+        if (!isChasing && !isSearching &&
+        ((distanceToPlayer < hearingDistance && PlayerIsRunning()) || IsScreamHeard(distanceToPlayer)))
         {
             heardFootstep = true;
             lastHeardPosition = player.position;
@@ -78,6 +96,10 @@ public class EnemyController : MonoBehaviour
                 isChasing = false;
                 SetRandomDestination();
             }
+            if (Vector3.Distance(transform.position, player.position) < 3f)
+            {
+                OnPlayerCaught();
+            }
         }
 
         if (!isChasing && !isSearching && !agent.pathPending && agent.remainingDistance < 1f)
@@ -85,10 +107,7 @@ public class EnemyController : MonoBehaviour
             SetRandomDestination();
         }
 
-        if (Vector3.Distance(transform.position, player.position) < 3f)
-        {
-            OnPlayerCaught();
-        }
+
     }
 
     void SetRandomDestination()
@@ -104,6 +123,7 @@ public class EnemyController : MonoBehaviour
 
     void GoToHeardPosition()
     {
+        agent.speed = 2 * speed;
         agent.SetDestination(lastHeardPosition);
     }
 
@@ -111,7 +131,7 @@ public class EnemyController : MonoBehaviour
     {
         isChasing = true;
         isSearching = false;
-        agent.speed = 2 * speed;
+        agent.speed = 3 * speed;
         if (!audioSource.isPlaying && audioSource.clip != jumpscareClip)
         {
             audioSource.clip = alertClip;

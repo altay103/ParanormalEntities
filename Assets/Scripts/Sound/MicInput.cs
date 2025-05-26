@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class MicInput : MonoBehaviour
 {
-    public static float MicLoudness;
+    public static float MicLoudness = 0;
     private AudioClip _clip;
     private const int SampleWindow = 128;
 
@@ -41,6 +41,6 @@ public class MicInput : MonoBehaviour
                 maxLevel = wavePeak;
         }
 
-        return Mathf.Clamp01(maxLevel * 10); 
+        return Mathf.Clamp01(maxLevel * 10);
     }
 }

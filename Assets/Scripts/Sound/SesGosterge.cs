@@ -5,12 +5,12 @@ public class SesGosterge : MonoBehaviour
 {
     public Image[] barlar;
     public Color aktifBeyaz, aktifYesil, aktifSari, aktifTuruncu, aktifKirmizi;
-
+    public AudioListener audioListener;
     [Range(0, 1)] public float sesSeviyesi = 0.0f;
 
     void Update()
     {
-        sesSeviyesi = MicInput.MicLoudness;
+        sesSeviyesi = MicInput.MicLoudness; // Ses seviyesini mikrofon girişinden al
         int aktifBarSayisi = Mathf.RoundToInt(sesSeviyesi * barlar.Length);
 
         for (int i = 0; i < barlar.Length; i++)
@@ -35,7 +35,7 @@ public class SesGosterge : MonoBehaviour
             else
             {
                 Color saydamRenk = hedefRenk;
-                saydamRenk.a = 0.1f; 
+                saydamRenk.a = 0.1f;
                 barlar[i].color = saydamRenk;
             }
         }
