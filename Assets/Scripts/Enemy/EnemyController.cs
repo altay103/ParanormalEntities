@@ -9,7 +9,7 @@ public class EnemyController : MonoBehaviour
     public NavMeshAgent agent;
     public Transform player;
     public float hearingDistance = 15f;
-    public float chaseDistance = 10f;
+    public float chaseDistance = 15f;
     public float searchDuration = 5f;
     public LayerMask playerLayer;
     public Animator animator;
@@ -37,6 +37,7 @@ public class EnemyController : MonoBehaviour
         float gerekenEsik = HesaplaEsik(mesafe);
         if (sesSeviyesi >= gerekenEsik)
         {
+            Debug.Log($"Scream heard! Distance: {mesafe}, Level: {sesSeviyesi}, Threshold: {gerekenEsik}");
             return true;
         }
         return false;
@@ -112,12 +113,33 @@ public class EnemyController : MonoBehaviour
 
     void SetRandomDestination()
     {
-        Vector3 randomDirection = Random.insideUnitSphere * 20f;
-        randomDirection += transform.position;
-        NavMeshHit hit;
-        if (NavMesh.SamplePosition(randomDirection, out hit, 20f, NavMesh.AllAreas))
+        float moveRadius = 20f;
+        float destinationCheckDistance = 0.5f;
+        // Eğer zaten bir yere gidiyorsa ve henüz varmadıysa, yeni hedef verme
+        if ((agent.velocity.sqrMagnitude > 0.1f) && (agent.pathPending || agent.remainingDistance > destinationCheckDistance))
         {
-            agent.SetDestination(hit.position);
+            return;
+        }
+
+
+        // 1. Rastgele bir yön (sadece yatay düzlemde)
+        Vector3 randomDirection = Random.insideUnitSphere;
+        randomDirection.y = 0f;
+        randomDirection *= moveRadius;
+        randomDirection += transform.position;
+
+        // 2. NavMesh üzerinde uygun bir pozisyon bul
+        if (NavMesh.SamplePosition(randomDirection, out NavMeshHit hit, moveRadius, NavMesh.AllAreas))
+        {
+            // 3. O pozisyona gidebilecek yol var mı, kontrol et
+            NavMeshPath path = new NavMeshPath();
+            if (agent.CalculatePath(hit.position, path) && path.status == NavMeshPathStatus.PathComplete)
+            {
+                agent.SetDestination(hit.position);
+
+                // DEBUG: Hedef çizgisi (sadece geliştirirken işe yarar)
+                Debug.DrawLine(transform.position, hit.position, Color.green, 1.5f);
+            }
         }
     }
 
@@ -132,7 +154,7 @@ public class EnemyController : MonoBehaviour
         isChasing = true;
         isSearching = false;
         agent.speed = 3 * speed;
-        if (!audioSource.isPlaying && audioSource.clip != jumpscareClip)
+        if (!audioSource.isPlaying || audioSource.clip != jumpscareClip)
         {
             audioSource.clip = alertClip;
             audioSource.Play();
@@ -141,7 +163,7 @@ public class EnemyController : MonoBehaviour
 
     void OnPlayerCaught()
     {
-        if (audioSource.clip != jumpscareClip)
+        if (audioSource.clip != jumpscareClip || !audioSource.isPlaying)
         {
             audioSource.clip = jumpscareClip;
             audioSource.Play();
