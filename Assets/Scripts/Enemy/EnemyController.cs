@@ -8,9 +8,9 @@ public class EnemyController : MonoBehaviour
 {
     public NavMeshAgent agent;
     public Transform player;
-    public float hearingDistance = 15f;
-    public float chaseDistance = 15f;
-    public float searchDuration = 5f;
+    float hearingDistance = 10f;
+    float chaseDistance = 35f;
+    float searchDuration = 1f;
     public LayerMask playerLayer;
     public Animator animator;
     public AudioSource audioSource;
@@ -19,9 +19,8 @@ public class EnemyController : MonoBehaviour
     public AudioClip jumpscareClip;
 
     private Vector3 lastHeardPosition;
-    private bool heardFootstep = false;
     private bool isChasing = false;
-    private bool isSearching = false;
+    private bool isHearing = false;
     private float searchTimer = 0f;
     float speed;
 
@@ -44,73 +43,98 @@ public class EnemyController : MonoBehaviour
     }
     float HesaplaEsik(float mesafe)
     {
+        //return 10;
         if (mesafe <= 5f) return 0.2f;
         if (mesafe <= 10f) return 0.4f;
         if (mesafe <= 15f) return 0.6f;
-        return 0.8f;
+        if (mesafe <= 20) return 0.8f;
+        return 1f;
     }
+
     void Update()
     {
         float distanceToPlayer = Vector3.Distance(transform.position, player.position);
-
-        if (!isChasing && !isSearching &&
-        ((distanceToPlayer < hearingDistance && PlayerIsRunning()) || IsScreamHeard(distanceToPlayer)))
+        if (CanSeePlayer())
         {
-            heardFootstep = true;
+            StartChase();
+            searchTimer = searchDuration;
+        }
+        else if (CanHearPlayer() && !isChasing)
+        {
             lastHeardPosition = player.position;
             GoToHeardPosition();
         }
 
-        if (heardFootstep && !isChasing)
-        {
-            if (Vector3.Distance(transform.position, lastHeardPosition) < 1.5f)
-            {
-                isSearching = true;
-                searchTimer = searchDuration;
-                heardFootstep = false;
-            }
-        }
+        // if (heardFootstep && !isChasing)
+        // {
+        //     if (Vector3.Distance(transform.position, lastHeardPosition) < 1.5f)
+        //     {
+        //         isSearching = true;
+        //         searchTimer = searchDuration;
+        //         heardFootstep = false;
+        //     }
+        // }
 
-        if (isSearching)
-        {
-            searchTimer -= Time.deltaTime;
+        // if (isSearching)
+        // {
+        //     searchTimer -= Time.deltaTime;
 
-            if (searchTimer <= 0f)
-            {
-                isSearching = false;
-                SetRandomDestination();
-            }
-        }
-        if (CanSeePlayer())
-        {
-            StartChase();
-        }
-        else
-        {
-            agent.speed = speed;
-        }
+        //     if (searchTimer <= 0f)
+        //     {
+        //         isSearching = false;
+        //         SetRandomDestination();
+        //     }
+        // }
+
+
         if (isChasing)
         {
+            isHearing = false;
             agent.SetDestination(player.position);
-            if (!CanSeePlayer())
+            searchTimer -= Time.deltaTime;
+            if (searchTimer <= 0f)
             {
                 isChasing = false;
-                SetRandomDestination();
             }
-            if (Vector3.Distance(transform.position, player.position) < 3f)
+            if (distanceToPlayer < 4f)
             {
                 OnPlayerCaught();
             }
+            // if (!CanSeePlayer())
+            // {
+            //     isChasing = false;
+            //     SetRandomDestination();
+            // }
+
+        }
+        if (Vector3.Distance(transform.position, lastHeardPosition) < 1.5f && isHearing)
+        {
+            isHearing = false;
         }
 
-        if (!isChasing && !isSearching && !agent.pathPending && agent.remainingDistance < 1f)
+
+        else if (!isChasing && !isHearing && !agent.pathPending)
         {
+            agent.speed = speed;
             SetRandomDestination();
         }
 
 
-    }
 
+
+    }
+    bool CanHearPlayer()
+    {
+        float distanceToPlayer = Vector3.Distance(transform.position, player.position);
+        Debug.Log($"Heard : {distanceToPlayer} < {hearingDistance} = {distanceToPlayer < hearingDistance} and PlayerIsRunning: {PlayerIsRunning()}");
+        if ((distanceToPlayer < hearingDistance && PlayerIsRunning()) || IsScreamHeard(distanceToPlayer))
+        {
+            Debug.Log($"Hearing player! Distance: {distanceToPlayer}");
+            isHearing = true;
+            return true;
+        }
+        return false;
+    }
     void SetRandomDestination()
     {
         float moveRadius = 20f;
@@ -145,24 +169,25 @@ public class EnemyController : MonoBehaviour
 
     void GoToHeardPosition()
     {
-        agent.speed = 2 * speed;
+        agent.speed = 1.5f * speed;
         agent.SetDestination(lastHeardPosition);
     }
 
     void StartChase()
     {
         isChasing = true;
-        isSearching = false;
-        agent.speed = 3 * speed;
-        if (!audioSource.isPlaying || audioSource.clip != jumpscareClip)
+        agent.speed = 2.5f * speed;
+        if (!audioSource.isPlaying)
         {
             audioSource.clip = alertClip;
             audioSource.Play();
         }
+
     }
 
     void OnPlayerCaught()
     {
+        Debug.Log("Player caught!");
         if (audioSource.clip != jumpscareClip || !audioSource.isPlaying)
         {
             audioSource.clip = jumpscareClip;
@@ -172,17 +197,23 @@ public class EnemyController : MonoBehaviour
 
     bool CanSeePlayer()
     {
+        Debug.Log("Checking if player is visible...");
         Vector3 direction = player.position - transform.position;
         RaycastHit hit;
 
         if (Physics.Raycast(transform.position + Vector3.up, direction.normalized, out hit, chaseDistance))
         {
-            if (hit.collider.transform == player)
+            if (hit.collider.CompareTag("Player"))
             {
                 Debug.DrawLine(transform.position + Vector3.up, hit.point, Color.red);
                 return true;
             }
+            else
+            {
+                Debug.DrawLine(transform.position + Vector3.up, hit.point, Color.yellow);
+            }
         }
+        Debug.DrawLine(transform.position + Vector3.up, transform.position + direction.normalized * chaseDistance, Color.blue);
         return false;
     }
 
